@@ -1,4 +1,3 @@
-
 /**
  * Node shims.
  *
@@ -28,15 +27,16 @@ process.nextTick = (function(){
   var timeouts = []
     , name = 'mocha-zero-timeout'
 
+  window.addEventListener('message', function(e){
+    if (e.source == window && e.data == name) {
+      if (e.stopPropagation) e.stopPropagation();
+      if (timeouts.length) timeouts.shift()();
+    }
+  }, true);
+
   return function(fn){
     timeouts.push(fn);
     window.postMessage(name, '*');
-    window.addEventListener('message', function(e){
-      if (e.source == window && e.data == name) {
-        if (e.stopPropagation) e.stopPropagation();
-        if (timeouts.length) timeouts.shift()();
-      }
-    }, true);
   }
 })();
 
@@ -133,7 +133,7 @@ window.mocha = require('mocha');
    * Run mocha, returning the Runner.
    */
 
-  mocha.run = function(){
+  mocha.run = function(fn){
     suite.emit('run');
     var runner = new mocha.Runner(suite);
     var Reporter = options.reporter || mocha.reporters.HTML;
@@ -144,6 +144,6 @@ window.mocha = require('mocha');
     if (options.globals) runner.globals(options.globals);
     runner.globals(['location']);
     runner.on('end', highlightCode);
-    return runner.run();
+    return runner.run(fn);
   };
 })();
